@@ -24,7 +24,6 @@ type crawler struct {
 const (
 	contrachequeXPATH = "//*[@id='20']"
 	indenizacoesXPATH = "//*[@id='83']/div[2]/table/tbody"
-	// indenizacoesXPATH = "//*[@id='59']"
 )
 
 func (c crawler) crawl() ([]string, error) {
@@ -34,7 +33,7 @@ func (c crawler) crawl() ([]string, error) {
 		context.Background(),
 		append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3830.0 Safari/537.36"),
-			chromedp.Flag("headless", false), // mude para false para executar com navegador visível.
+			chromedp.Flag("headless", true), // mude para false para executar com navegador visível.
 			chromedp.NoSandbox,
 			chromedp.DisableGPU,
 		)...,
@@ -76,7 +75,7 @@ func (c crawler) crawl() ([]string, error) {
 
 	// Indenizações
 	month, _ := strconv.Atoi(c.month)
-	if c.year == "2020" || c.year == "2021" || (c.year == "2019" && month >= 7) {
+	if c.year != "2018" || (c.year == "2019" && month >= 7) {
 		log.Printf("\nClicando na aba indenizações (%s/%s)...", c.month, c.year)
 		if err := c.clicaAba(ctx, indenizacoesXPATH); err != nil {
 			log.Fatalf("Erro no setup:%v", err)
@@ -87,7 +86,7 @@ func (c crawler) crawl() ([]string, error) {
 			log.Fatalf("Erro no setup:%v", err)
 		}
 
-		// log.Printf("Seleção realizada com sucesso!\n")
+		log.Printf("Seleção realizada com sucesso!\n")
 		iFname := c.downloadFilePath("verbas-indenizatorias")
 		log.Printf("Fazendo download das indenizações (%s)...", iFname)
 		if err := c.exportaPlanilha(ctx, iFname); err != nil {
