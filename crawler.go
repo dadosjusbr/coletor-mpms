@@ -75,7 +75,7 @@ func (c crawler) crawl() ([]string, error) {
 
 	// Indenizações
 	month, _ := strconv.Atoi(c.month)
-	if c.year != "2018" || (c.year == "2019" && month >= 7) {
+	if c.year != "2018" || (c.year == "2019" && month >= 6) {
 		log.Printf("\nClicando na aba indenizações (%s/%s)...", c.month, c.year)
 		if err := c.clicaAba(ctx, indenizacoesXPATH); err != nil {
 			log.Fatalf("Erro no setup:%v", err)
