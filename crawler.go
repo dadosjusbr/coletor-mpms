@@ -61,7 +61,7 @@ func (c crawler) crawl() ([]string, error) {
 
 	// Contracheque
 	log.Printf("Realizando seleção (%s/%s)...", c.month, c.year)
-	if err := c.selecionaMesAno(ctx); err != nil {
+	if err := c.selecionaMesAno(ctx, "contracheque"); err != nil {
 		log.Fatalf("Erro no setup:%v", err)
 	}
 	log.Printf("Seleção realizada com sucesso!\n")
@@ -82,7 +82,7 @@ func (c crawler) crawl() ([]string, error) {
 		}
 
 		log.Printf("Realizando seleção (%s/%s)...", c.month, c.year)
-		if err := c.selecionaMesAno(ctx); err != nil {
+		if err := c.selecionaMesAno(ctx, "indenizatorias"); err != nil {
 			log.Fatalf("Erro no setup:%v", err)
 		}
 
@@ -118,8 +118,7 @@ func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 		// Abre o contracheque
 		chromedp.Click(xpath, chromedp.BySearch, chromedp.NodeReady),
 		chromedp.Sleep(c.timeBetweenSteps),
-		
-		
+
 		chromedp.Click(`//*[@id="26"]/div[2]/table`, chromedp.BySearch, chromedp.NodeReady),
 		chromedp.Sleep(c.timeBetweenSteps),
 
@@ -139,7 +138,7 @@ func (c crawler) clicaAba(ctx context.Context, xpath string) error {
 	)
 }
 
-func (c crawler) selecionaMesAno(ctx context.Context) error {
+func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 	if c.month == "01" {
 		c.month = "Jan"
 	} else if c.month == "02" {
@@ -166,51 +165,26 @@ func (c crawler) selecionaMesAno(ctx context.Context) error {
 		c.month = "Dez"
 	}
 
-	selectYear := "//*[@title='Ano']/div"
-	selectMonth := "//*[@title='Mês']/div"
+	var selectYear, selectMonth string
+	if tipo == "contracheque" {
+		selectYear = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
+		selectMonth = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
+	} else {
+		selectYear = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[1]`
+		selectMonth = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[4]`
+	}
 
 	year := fmt.Sprintf("//*[@title='%s']", c.year)
 	month := fmt.Sprintf("//*[@title='%s']", c.month)
 
-
-	if c.year == "2021"{
-		if c.month== "Dez"{
-			return chromedp.Run(ctx)
-		}
-
-		return chromedp.Run(ctx,
-			// Espera ficar visível
-			chromedp.WaitVisible(selectYear, chromedp.BySearch, chromedp.NodeReady),
-	
-			// Seleciona mês
-			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-	
-			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-		)
-	}
-
-	if c.month == "Dez"{
-		return chromedp.Run(ctx,
-			// Espera ficar visível
-			chromedp.WaitVisible(selectYear, chromedp.BySearch, chromedp.NodeReady),
-	
-			// Seleciona ano
-			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-	
-			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-		)
-
-	}
-
 	return chromedp.Run(ctx,
-		// Espera ficar visível
-		chromedp.WaitVisible(selectYear, chromedp.BySearch, chromedp.NodeReady),
-
 		// Seleciona ano
+		chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Sleep(c.timeBetweenSteps),
+
+		chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Sleep(c.timeBetweenSteps),
+
 		chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
 		chromedp.Sleep(c.timeBetweenSteps),
 
@@ -223,17 +197,28 @@ func (c crawler) selecionaMesAno(ctx context.Context) error {
 
 		chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
 		chromedp.Sleep(c.timeBetweenSteps),
+
+		chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Sleep(c.timeBetweenSteps),
+
+		chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Sleep(c.timeBetweenSteps),
 	)
-		
+
 }
 
 // exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download renomeia o arquivo.
 func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
-	chromedp.Run(ctx,
+	tctx, tcancel := context.WithTimeout(ctx, 30*time.Second)
+	defer tcancel()
+	if err := chromedp.Run(tctx,
 		// Clica no botão de download
 		chromedp.Click(`//*[@title='Enviar para Excel']`, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
-	)
+		chromedp.Click(`/html/body/div[8]/div[2]/button`, chromedp.BySearch, chromedp.NodeReady),
+	); err != nil {
+		return fmt.Errorf("planilha não disponível: %v", err)
+	}
 
 	if err := nomeiaDownload(c.output, fName); err != nil {
 		return fmt.Errorf("erro renomeando arquivo (%s): %v", fName, err)
