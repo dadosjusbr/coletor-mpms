@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultGeneralTimeout  = 6 * time.Minute  // Duração máxima total da coleta de todos os arquivos. Valor padrão calculado a partir de uma média de execuções ~4.5min
-	defaulTimeBetweenSteps = 14 * time.Second //Tempo de espera entre passos do coletor."
+	defaultGeneralTimeout  = 6 * time.Minute // Duração máxima total da coleta de todos os arquivos. Valor padrão calculado a partir de uma média de execuções ~4.5min
+	defaulTimeBetweenSteps = 5 * time.Second //Tempo de espera entre passos do coletor."
 )
 
 func main() {
