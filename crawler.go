@@ -33,7 +33,7 @@ func (c crawler) crawl() ([]string, error) {
 		context.Background(),
 		append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3830.0 Safari/537.36"),
-			chromedp.Flag("headless", true), // mude para false para executar com navegador visível.
+			chromedp.Flag("headless", false), // mude para false para executar com navegador visível.
 			chromedp.NoSandbox,
 			chromedp.DisableGPU,
 		)...,
@@ -167,8 +167,9 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 	var selectYear, selectMonth string
 	if tipo == "contracheque" {
-		selectYear = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
-		selectMonth = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
+
+		selectYear = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
+		selectMonth = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
 	} else {
 		selectYear = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[1]`
 		selectMonth = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[4]`
