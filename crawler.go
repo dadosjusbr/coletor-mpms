@@ -167,8 +167,9 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 	var selectYear, selectMonth string
 	if tipo == "contracheque" {
-		selectYear = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
-		selectMonth = `//*[@id="89"]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
+
+		selectYear = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
+		selectMonth = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
 	} else {
 		selectYear = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[1]`
 		selectMonth = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[4]`
