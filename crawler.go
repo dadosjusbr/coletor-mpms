@@ -14,6 +14,7 @@ import (
 )
 
 type crawler struct {
+	downloadTimeout   time.Duration
 	collectionTimeout time.Duration
 	timeBetweenSteps  time.Duration
 	year              string
@@ -139,35 +140,29 @@ func (c crawler) clicaAba(ctx context.Context, xpath string) error {
 }
 
 func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
-	if c.month == "01" {
-		c.month = "Jan"
-	} else if c.month == "02" {
-		c.month = "Fev"
-	} else if c.month == "03" {
-		c.month = "Mar"
-	} else if c.month == "04" {
-		c.month = "Abr"
-	} else if c.month == "05" {
-		c.month = "Mai"
-	} else if c.month == "06" {
-		c.month = "Jun"
-	} else if c.month == "07" {
-		c.month = "Jul"
-	} else if c.month == "08" {
-		c.month = "Ago"
-	} else if c.month == "09" {
-		c.month = "Set"
-	} else if c.month == "10" {
-		c.month = "Out"
-	} else if c.month == "11" {
-		c.month = "Nov"
-	} else if c.month == "12" {
-		c.month = "Dez"
+	monthConverted, err := strconv.Atoi(c.month)
+	if err != nil {
+		log.Fatal("erro ao converter mês para inteiro")
 	}
+
+	convMap := map[int]string{
+		1:  "Jan",
+		2:  "Fev",
+		3:  "Mar",
+		4:  "Abr",
+		5:  "Mai",
+		6:  "Jun",
+		7:  "Jul",
+		8:  "Ago",
+		9:  "Set",
+		10: "Out",
+		11: "Nov",
+		12: "Dez",
+	}
+	c.month = convMap[monthConverted]
 
 	var selectYear, selectMonth string
 	if tipo == "contracheque" {
-
 		selectYear = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
 		selectMonth = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
 	} else {
@@ -216,10 +211,19 @@ func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
 		// Clica no botão de download
 		chromedp.Click(`//*[@title='Enviar para Excel']`, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
-		chromedp.Click(`/html/body/div[8]/div[2]/button`, chromedp.BySearch, chromedp.NodeReady),
 	); err != nil {
 		return fmt.Errorf("planilha não disponível: %v", err)
 	}
+
+	if err := chromedp.Run(tctx,
+		// Clica no botão de OK
+		chromedp.Click(`/html/body/div[8]/div[2]/button`, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Sleep(c.timeBetweenSteps),
+	); err != nil {
+		return fmt.Errorf("erro ao clicar no botão de OK: %v", err)
+	}
+
+	time.Sleep(c.downloadTimeout)
 
 	if err := nomeiaDownload(c.output, fName); err != nil {
 		return fmt.Errorf("erro renomeando arquivo (%s): %v", fName, err)
