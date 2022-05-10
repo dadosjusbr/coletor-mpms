@@ -145,31 +145,21 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 		log.Fatal("erro ao converter mês para inteiro")
 	}
 
-	if monthConverted == 1 {
-		c.month = "Jan"
-	} else if monthConverted == 2 {
-		c.month = "Fev"
-	} else if monthConverted == 3 {
-		c.month = "Mar"
-	} else if monthConverted == 4 {
-		c.month = "Abr"
-	} else if monthConverted == 5 {
-		c.month = "Mai"
-	} else if monthConverted == 6 {
-		c.month = "Jun"
-	} else if monthConverted == 7 {
-		c.month = "Jul"
-	} else if monthConverted == 8 {
-		c.month = "Ago"
-	} else if monthConverted == 9 {
-		c.month = "Set"
-	} else if monthConverted == 10 {
-		c.month = "Out"
-	} else if monthConverted == 11 {
-		c.month = "Nov"
-	} else if monthConverted == 12 {
-		c.month = "Dez"
+	convMap := map[int]string{
+		1:  "Jan",
+		2:  "Fev",
+		3:  "Mar",
+		4:  "Abr",
+		5:  "Mai",
+		6:  "Jun",
+		7:  "Jul",
+		8:  "Ago",
+		9:  "Set",
+		10: "Out",
+		11: "Nov",
+		12: "Dez",
 	}
+	c.month = convMap[monthConverted]
 
 	var selectYear, selectMonth string
 	if tipo == "contracheque" {
