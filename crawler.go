@@ -193,19 +193,12 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 		chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
 		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
 	)
-
 }
 
 // exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download renomeia o arquivo.
 func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
-	tctx, tcancel := context.WithTimeout(ctx, 30*time.Second)
+	tctx, tcancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer tcancel()
 	if err := chromedp.Run(tctx,
 		// Clica no botão de download
@@ -213,14 +206,6 @@ func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
 		chromedp.Sleep(c.timeBetweenSteps),
 	); err != nil {
 		return fmt.Errorf("planilha não disponível: %v", err)
-	}
-
-	if err := chromedp.Run(tctx,
-		// Clica no botão de OK
-		chromedp.Click(`/html/body/div[8]/div[2]/button`, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-	); err != nil {
-		return fmt.Errorf("erro ao clicar no botão de OK: %v", err)
 	}
 
 	time.Sleep(c.downloadTimeout)
