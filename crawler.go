@@ -198,7 +198,7 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 // exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download renomeia o arquivo.
 func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
-	tctx, tcancel := context.WithTimeout(ctx, 2*time.Minute)
+	tctx, tcancel := context.WithTimeout(ctx, 30*time.Second)
 	defer tcancel()
 	if err := chromedp.Run(tctx,
 		// Clica no botão de download
