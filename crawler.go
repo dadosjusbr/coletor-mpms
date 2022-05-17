@@ -173,6 +173,41 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 	year := fmt.Sprintf("//*[@title='%s']", c.year)
 	month := fmt.Sprintf("//*[@title='%s']", c.month)
 
+	selectedMonth, err := c.getSelectedMonth(ctx, tipo)
+	if err != nil {
+		log.Fatalf("erro ao obter mês selecionado no site: %v", err)
+	}
+
+	if selectedMonth == c.month {
+		return chromedp.Run(ctx,
+			// Seleciona ano
+			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			// Seleciona mês
+			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+		)
+	}
+
 	return chromedp.Run(ctx,
 		// Seleciona ano
 		chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
@@ -246,4 +281,25 @@ func nomeiaDownload(output, fName string) error {
 		return fmt.Errorf("erro renomeando último arquivo modificado (%s)->(%s): %v", newestFPath, fName, err)
 	}
 	return nil
+}
+
+func (c crawler) getSelectedMonth(ctx context.Context, tipo string) (string, error) {
+	var monthTag string
+
+	if tipo == "contracheque" {
+		monthTag = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[6]`
+	} else {
+		monthTag = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[6]`
+	}
+
+	var ok bool
+	var selectedMonth string
+	if err := chromedp.Run(ctx,
+		chromedp.AttributeValue(monthTag, "title", &selectedMonth, &ok, chromedp.BySearch),
+		chromedp.Sleep(c.timeBetweenSteps),
+	); err != nil {
+		return "", err
+	}
+
+	return selectedMonth, nil
 }
