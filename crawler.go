@@ -192,19 +192,6 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
 			chromedp.Sleep(c.timeBetweenSteps),
-
-			// Seleciona mês
-			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
 		)
 	}
 
