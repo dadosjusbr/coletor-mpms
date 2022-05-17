@@ -179,6 +179,7 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 	}
 
 	if selectedMonth == c.month {
+		//Faz a seleção apenas do ano
 		return chromedp.Run(ctx,
 			// Seleciona ano
 			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
@@ -193,29 +194,30 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
 			chromedp.Sleep(c.timeBetweenSteps),
 		)
+	} else {
+		//Faz a seleção do ano e do mês
+		return chromedp.Run(ctx,
+			// Seleciona ano
+			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			// Seleciona mês
+			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+
+			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
+			chromedp.Sleep(c.timeBetweenSteps),
+		)
 	}
-
-	return chromedp.Run(ctx,
-		// Seleciona ano
-		chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		// Seleciona mês
-		chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-
-		chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
-	)
 }
 
 // exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download renomeia o arquivo.
@@ -286,6 +288,9 @@ func (c crawler) getSelectedMonth(ctx context.Context, tipo string) (string, err
 		chromedp.Sleep(c.timeBetweenSteps),
 	); err != nil {
 		return "", err
+	}
+	if !ok {
+		return "", fmt.Errorf(`falha ao pegar atributo "title"`)
 	}
 
 	return selectedMonth, nil
