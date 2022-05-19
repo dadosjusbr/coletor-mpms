@@ -173,11 +173,19 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 	year := fmt.Sprintf("//*[@title='%s']", c.year)
 	month := fmt.Sprintf("//*[@title='%s']", c.month)
 
+	//Tenta pegar o mês que está selecionado atualmente lá no site do MPMS
 	selectedMonth, err := c.getSelectedMonth(ctx, tipo)
 	if err != nil {
 		log.Fatalf("erro ao obter mês selecionado no site: %v", err)
 	}
 
+	/*
+		Quando o mês selecionado lá no site for igual ao mês que queremos coletar,
+		selecionamos apenas o ano da coleta. Isso resolve a diferença entre a
+		quantidade de clicks, de quando queremos coletar um mês diferente do que já
+		está selecionado lá no site, e a quantidade de clicks de quando queremos fazer
+		a coleta do mês que já está selecionado.
+	*/
 	if selectedMonth == c.month {
 		//Faz a seleção apenas do ano
 		return chromedp.Run(ctx,
@@ -275,6 +283,10 @@ func nomeiaDownload(output, fName string) error {
 func (c crawler) getSelectedMonth(ctx context.Context, tipo string) (string, error) {
 	var monthTag string
 
+	/*
+		Tag das divs que mostram o mês selecionado no site. São diferentes,
+		dependendo da aba que está selecionada atualmente
+	*/
 	if tipo == "contracheque" {
 		monthTag = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[6]`
 	} else {
@@ -283,14 +295,24 @@ func (c crawler) getSelectedMonth(ctx context.Context, tipo string) (string, err
 
 	var ok bool
 	var selectedMonth string
+
+	/*
+		Procura o valor que está no atributo "title" do botão de selecionar mês.
+		Caso ele não encontre a div, um erro será lançado. Caso ele encontre a div,
+		mas não encontre o atributo "title" dentro dela, a variável "ok" será igual a false.
+		Por fim, se ele encontrar a div e ela possuir o atributo "title", a variável
+		"selectedMonth" receberá o valor desse atributo.
+	*/
 	if err := chromedp.Run(ctx,
 		chromedp.AttributeValue(monthTag, "title", &selectedMonth, &ok, chromedp.BySearch),
 		chromedp.Sleep(c.timeBetweenSteps),
 	); err != nil {
-		return "", err
+		return "", fmt.Errorf(`erro ao tentar encontrar a div a ser selecionada: %v`, err)
 	}
+
+	//Verifica se o atributo "title" foi encontrado dentro da div selecionada.
 	if !ok {
-		return "", fmt.Errorf(`falha ao pegar atributo "title"`)
+		return "", fmt.Errorf(`a div selecionada não possui o atributo "title"`)
 	}
 
 	return selectedMonth, nil
