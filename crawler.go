@@ -23,7 +23,7 @@ type crawler struct {
 }
 
 const (
-	contrachequeXPATH = "//*[@id='20']"
+	contrachequeXPATH = `//*[@id="menu-interno-estatico"]/li[1]/a`
 	indenizacoesXPATH = "//*[@id='83']/div[2]/table/tbody"
 )
 
@@ -109,7 +109,7 @@ func (c crawler) downloadFilePath(prefix string) string {
 // Navega para as planilhas
 func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 	const (
-		baseURL = "https://transparencia.mpms.mp.br/QvAJAXZfc/opendoc.htm?document=portaltransparencia%5Cportaltransparencia.qvw&lang=pt-BR&host=QVS%40srv-1645&anonymous=true"
+		baseURL = "https://transparenciaweb.mpms.mp.br/contracheque"
 	)
 
 	return chromedp.Run(ctx,
@@ -117,11 +117,11 @@ func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 		chromedp.Sleep(c.timeBetweenSteps),
 
 		// Abre o contracheque
-		chromedp.Click(xpath, chromedp.BySearch, chromedp.NodeReady),
+		chromedp.Click(xpath, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
 
-		chromedp.Click(`//*[@id="26"]/div[2]/table`, chromedp.BySearch, chromedp.NodeReady),
-		chromedp.Sleep(c.timeBetweenSteps),
+		//chromedp.Click(`//*[@id="26"]/div[2]/table`, chromedp.BySearch, chromedp.NodeReady),
+		//chromedp.Sleep(c.timeBetweenSteps),
 
 		// Altera o diretório de download
 		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
@@ -163,14 +163,14 @@ func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
 
 	var selectYear, selectMonth string
 	if tipo == "contracheque" {
-		selectYear = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[1]/div[1]`
-		selectMonth = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[4]/div[1]`
+		selectYear = `//*[@id="box-seach"]/form/select/option`
+		selectMonth = `//*[@id="conteudo"]/div/table/tbody`
 	} else {
 		selectYear = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[1]`
 		selectMonth = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[4]`
 	}
 
-	year := fmt.Sprintf("//*[@title='%s']", c.year)
+	year := fmt.Sprintf("//*[@value='%s']", c.year)
 	month := fmt.Sprintf("//*[@title='%s']", c.month)
 
 	//Tenta pegar o mês que está selecionado atualmente lá no site do MPMS
