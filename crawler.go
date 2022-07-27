@@ -24,7 +24,7 @@ type crawler struct {
 
 const (
 	contrachequeXPATH = `//*[@id="menu-interno-estatico"]/li[1]/a`
-	indenizacoesXPATH = "//*[@id='83']/div[2]/table/tbody"
+	indenizacoesXPATH = `//*[@id="menu-interno-estatico"]/li[8]/a`
 )
 
 func (c crawler) crawl() ([]string, error) {
@@ -53,16 +53,15 @@ func (c crawler) crawl() ([]string, error) {
 	// NOTA IMPORTANTE: os prefixos dos nomes dos arquivos tem que ser igual
 	// ao esperado no parser MPMS.
 
-	// Seleciona o contracheque na página principal
+	// Contracheque
 	log.Printf("Clicando em contracheque(%s/%s)...", c.month, c.year)
 	if err := c.navegacaoSite(ctx, contrachequeXPATH); err != nil {
 		log.Fatalf("Erro no setup:%v", err)
 	}
 	log.Printf("Clicado com sucesso!\n")
 
-	// Contracheque
 	log.Printf("Realizando seleção (%s/%s)...", c.month, c.year)
-	if err := c.selecionaMesAno(ctx, "contracheque"); err != nil {
+	if err := c.selecionaAno(ctx, "contracheque"); err != nil {
 		log.Fatalf("Erro no setup:%v", err)
 	}
 	log.Printf("Seleção realizada com sucesso!\n")
@@ -78,12 +77,12 @@ func (c crawler) crawl() ([]string, error) {
 	month, _ := strconv.Atoi(c.month)
 	if c.year != "2018" || (c.year == "2019" && month >= 6) {
 		log.Printf("\nClicando na aba indenizações (%s/%s)...", c.month, c.year)
-		if err := c.clicaAba(ctx, indenizacoesXPATH); err != nil {
+		if err := c.navegacaoSite(ctx, indenizacoesXPATH); err != nil {
 			log.Fatalf("Erro no setup:%v", err)
 		}
 
 		log.Printf("Realizando seleção (%s/%s)...", c.month, c.year)
-		if err := c.selecionaMesAno(ctx, "indenizatorias"); err != nil {
+		if err := c.selecionaAno(ctx, "indenizatorias"); err != nil {
 			log.Fatalf("Erro no setup:%v", err)
 		}
 
@@ -120,9 +119,6 @@ func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 		chromedp.Click(xpath, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
 
-		//chromedp.Click(`//*[@id="26"]/div[2]/table`, chromedp.BySearch, chromedp.NodeReady),
-		//chromedp.Sleep(c.timeBetweenSteps),
-
 		// Altera o diretório de download
 		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
 			WithDownloadPath(c.output).
@@ -130,111 +126,32 @@ func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 	)
 }
 
-// clicaAba clica na aba referenciada pelo XPATH passado como parâmetro.
-// Também espera até o estar visível.
-func (c crawler) clicaAba(ctx context.Context, xpath string) error {
+func (c crawler) selecionaAno(ctx context.Context, tipo string) error {
+
+	selectYear := `//*[@id="box-seach"]/form/select`
+	//Faz a seleção apenas do ano
 	return chromedp.Run(ctx,
-		chromedp.Click(xpath),
+		// Seleciona ano
+		chromedp.SetValue(selectYear, c.year, chromedp.BySearch, chromedp.NodeVisible),
+		chromedp.Sleep(c.timeBetweenSteps),
+
+		chromedp.Click(`//*[@id="box-seach"]/form/button`, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
 	)
 }
 
-func (c crawler) selecionaMesAno(ctx context.Context, tipo string) error {
-	monthConverted, err := strconv.Atoi(c.month)
-	if err != nil {
-		log.Fatal("erro ao converter mês para inteiro")
-	}
-
-	convMap := map[int]string{
-		1:  "Jan",
-		2:  "Fev",
-		3:  "Mar",
-		4:  "Abr",
-		5:  "Mai",
-		6:  "Jun",
-		7:  "Jul",
-		8:  "Ago",
-		9:  "Set",
-		10: "Out",
-		11: "Nov",
-		12: "Dez",
-	}
-	c.month = convMap[monthConverted]
-
-	var selectYear, selectMonth string
-	if tipo == "contracheque" {
-		selectYear = `//*[@id="box-seach"]/form/select/option`
-		selectMonth = `//*[@id="conteudo"]/div/table/tbody`
-	} else {
-		selectYear = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[1]`
-		selectMonth = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[4]`
-	}
-
-	year := fmt.Sprintf("//*[@value='%s']", c.year)
-	month := fmt.Sprintf("//*[@title='%s']", c.month)
-
-	//Tenta pegar o mês que está selecionado atualmente lá no site do MPMS
-	selectedMonth, err := c.getSelectedMonth(ctx, tipo)
-	if err != nil {
-		log.Fatalf("erro ao obter mês selecionado no site: %v", err)
-	}
-
-	/*
-		Quando o mês selecionado lá no site for igual ao mês que queremos coletar,
-		selecionamos apenas o ano da coleta. Isso resolve a diferença entre a
-		quantidade de clicks, de quando queremos coletar um mês diferente do que já
-		está selecionado lá no site, e a quantidade de clicks de quando queremos fazer
-		a coleta do mês que já está selecionado.
-	*/
-	if selectedMonth == c.month {
-		//Faz a seleção apenas do ano
-		return chromedp.Run(ctx,
-			// Seleciona ano
-			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-		)
-	} else {
-		//Faz a seleção do ano e do mês
-		return chromedp.Run(ctx,
-			// Seleciona ano
-			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(selectYear, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(year, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			// Seleciona mês
-			chromedp.Click(selectMonth, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-
-			chromedp.Click(month, chromedp.BySearch, chromedp.NodeReady),
-			chromedp.Sleep(c.timeBetweenSteps),
-		)
-	}
-}
-
-// exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download renomeia o arquivo.
+// exportaPlanilha clica no botão correto para exportar para excel, espera um tempo para download e renomeia o arquivo.
 func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
 	tctx, tcancel := context.WithTimeout(ctx, 30*time.Second)
 	defer tcancel()
+	/*monthConverted, err := strconv.Atoi(c.month)
+	if err != nil {
+		log.Fatal("erro ao converter mês para inteiro")
+	}*/
+	link := fmt.Sprintf(`/html/body/div[3]/div[2]/div[3]/div/table/tbody/tr[%d]/td[3]/a`, 3)
 	if err := chromedp.Run(tctx,
 		// Clica no botão de download
-		chromedp.Click(`//*[@title='Enviar para Excel']`, chromedp.BySearch, chromedp.NodeVisible),
+		chromedp.Click(link, chromedp.BySearch, chromedp.NodeVisible),
 		chromedp.Sleep(c.timeBetweenSteps),
 	); err != nil {
 		return fmt.Errorf("planilha não disponível: %v", err)
@@ -278,42 +195,4 @@ func nomeiaDownload(output, fName string) error {
 		return fmt.Errorf("erro renomeando último arquivo modificado (%s)->(%s): %v", newestFPath, fName, err)
 	}
 	return nil
-}
-
-func (c crawler) getSelectedMonth(ctx context.Context, tipo string) (string, error) {
-	var monthTag string
-
-	/*
-		Tag das divs que mostram o mês selecionado no site. São diferentes,
-		dependendo da aba que está selecionada atualmente
-	*/
-	if tipo == "contracheque" {
-		monthTag = `/html/body/div[5]/div/div[4]/div[2]/div/div[1]/div[5]/div/div[6]`
-	} else {
-		monthTag = `/html/body/div[5]/div/div[1]/div[2]/div/div[1]/div[5]/div/div[6]`
-	}
-
-	var ok bool
-	var selectedMonth string
-
-	/*
-		Procura o valor que está no atributo "title" do botão de selecionar mês.
-		Caso ele não encontre a div, um erro será lançado. Caso ele encontre a div,
-		mas não encontre o atributo "title" dentro dela, a variável "ok" será igual a false.
-		Por fim, se ele encontrar a div e ela possuir o atributo "title", a variável
-		"selectedMonth" receberá o valor desse atributo.
-	*/
-	if err := chromedp.Run(ctx,
-		chromedp.AttributeValue(monthTag, "title", &selectedMonth, &ok, chromedp.BySearch),
-		chromedp.Sleep(c.timeBetweenSteps),
-	); err != nil {
-		return "", fmt.Errorf(`erro ao tentar encontrar a div a ser selecionada: %v`, err)
-	}
-
-	//Verifica se o atributo "title" foi encontrado dentro da div selecionada.
-	if !ok {
-		return "", fmt.Errorf(`a div selecionada não possui o atributo "title"`)
-	}
-
-	return selectedMonth, nil
 }
