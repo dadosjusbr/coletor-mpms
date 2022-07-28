@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/browser"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 )
 
@@ -144,11 +145,14 @@ func (c crawler) selecionaAno(ctx context.Context, tipo string) error {
 func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
 	tctx, tcancel := context.WithTimeout(ctx, 30*time.Second)
 	defer tcancel()
-	/*monthConverted, err := strconv.Atoi(c.month)
+	monthConverted, err := strconv.Atoi(c.month)
 	if err != nil {
 		log.Fatal("erro ao converter mês para inteiro")
-	}*/
-	link := fmt.Sprintf(`/html/body/div[3]/div[2]/div[3]/div/table/tbody/tr[%d]/td[3]/a`, 3)
+	}
+	var rows []*cdp.Node
+	chromedp.Run(ctx, chromedp.Nodes("tr", &rows, chromedp.ByQueryAll))
+	tr := len(rows) + 1 - monthConverted
+	link := fmt.Sprintf(`/html/body/div[3]/div[2]/div[3]/div/table/tbody/tr[%d]/td[3]/a`, tr)
 	if err := chromedp.Run(tctx,
 		// Clica no botão de download
 		chromedp.Click(link, chromedp.BySearch, chromedp.NodeVisible),
