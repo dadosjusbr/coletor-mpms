@@ -147,10 +147,13 @@ func (c crawler) exportaPlanilha(ctx context.Context, fName string) error {
 	defer tcancel()
 	monthConverted, err := strconv.Atoi(c.month)
 	if err != nil {
-		log.Fatal("erro ao converter mês para inteiro")
+		return fmt.Errorf("erro ao converter mês para inteiro:%w", err)
 	}
 	var rows []*cdp.Node
-	chromedp.Run(ctx, chromedp.Nodes("tr", &rows, chromedp.ByQueryAll))
+	err = chromedp.Run(ctx, chromedp.Nodes("tr", &rows, chromedp.ByQueryAll))
+	if err != nil {
+		return fmt.Errorf("erro ao selecionar elemento <tr>:%w", err)
+	}
 	tr := len(rows) + 1 - monthConverted
 	link := fmt.Sprintf(`/html/body/div[3]/div[2]/div[3]/div/table/tbody/tr[%d]/td[3]/a`, tr)
 	if err := chromedp.Run(tctx,
