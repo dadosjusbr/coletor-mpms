@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/chromedp/sysutil v1.0.0 // indirect
+	github.com/dadosjusbr/status v0.0.0-20230206194416-0829c65102ab
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.1.0 // indirect
