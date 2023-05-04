@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/browser"
@@ -126,7 +127,11 @@ func (c crawler) navegacaoSite(ctx context.Context, xpath string) error {
 			WithDownloadPath(c.output).
 			WithEventsEnabled(true),
 	); err != nil {
-		return status.NewError(status.ConnectionError, err)
+		if strings.Contains(err.Error(), "context deadline exceeded") {
+			return status.NewError(status.DeadlineExceeded, err)
+		} else {
+			return status.NewError(status.ConnectionError, err)
+		}
 	}
 	return nil
 }
